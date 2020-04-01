@@ -1,0 +1,50 @@
+ using System;
+    using System.IO;
+    using Microsoft.Azure.WebJobs;
+    using Microsoft.WindowsAzure.Storage;
+    using Microsoft.WindowsAzure.Storage.Blob;
+    using Microsoft.WindowsAzure.Storage.Blob.Protocol;
+    using Microsoft.Azure.WebJobs.Host;
+    using Microsoft.Extensions.Logging;
+    using System.Collections.Generic;
+    using System.Data;
+    using System.Data.SqlClient;
+    using System.IO.Compression;
+    using System.Linq;
+    using System.Text.RegularExpressions;
+    using System.Threading.Tasks;
+
+    namespace TestF
+    {
+        public static class Function1
+        {
+            static string ConnectionString;
+            static String Path = @"C:\test3\AzureTest\" ;
+
+            [FunctionName("Function1")]
+            public static void Run([BlobTrigger("blob_path{name}", Connection = "connection value")]Stream myBlob, string name, ILogger log)
+            {
+                //log.LogInformation($"C# Blob trigger function Processed blob\n Name:{name} \n Size: {myBlob.Length} Bytes");
+                ConnectionString = Environment.GetEnvironmentVariable("conection key");
+                try
+                {
+                    Console.WriteLine("object creation is started  ");
+                    CloudStorageAccount CstorageAccount = CloudStorageAccount.Parse(ConnectionString);
+                    CloudBlobClient blobClient = CstorageAccount.CreateCloudBlobClient();
+                    CloudBlobContainer container = blobClient.GetContainerReference("container");
+                    CloudBlockBlob blobBlock =container.GetBlockBlobReference("blobfolder/{name}");
+                    Console.WriteLine("object creation is ended and dowloading is started");
+                     using (FileStream fileStream = System.IO.File.OpenWrite(Path+name))
+                        {
+                            blobBlock.DownloadToStreamAsync(fileStream);
+                        }
+                 	 Console.WriteLine("downloading completed ");
+                    log.LogInformation($"C# Blob trigger function Processed blob\n Name:{name} \n Size: {myBlob.Length} Bytes");
+
+                }
+                catch (Exception) { }
+            }
+
+       }
+
+    }
